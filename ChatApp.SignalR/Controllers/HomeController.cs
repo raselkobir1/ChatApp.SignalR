@@ -1,5 +1,6 @@
 ﻿using ChatApp.SignalR.Data;
 using ChatApp.SignalR.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ using System.Diagnostics;
 
 namespace ChatApp.SignalR.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -23,24 +25,38 @@ namespace ChatApp.SignalR.Controllers
         public async Task<IActionResult> Index()
         {
             var currentUser = await _userManager.GetUserAsync(User);
-            ViewBag.CurrentUserName = currentUser.UserName;
+            if (User.Identity.IsAuthenticated)
+            {
+                ViewBag.CurrentUserName = currentUser.UserName;
+            }
+            
             var messages = await _context.Messages.ToListAsync();
             return View(messages);
         }
         public async Task<IActionResult> Create(Message message)
         {
-            if (ModelState.IsValid)
+            try
             {
-                message.UserName = User.Identity.Name;
-                var sender = await _userManager.GetUserAsync(User);
-                message.UserId = sender.Id;
-                await _context.AddAsync(message);
-                await _context.SaveChangesAsync();
-                return Ok();
+                //if (ModelState.IsValid)
+                //{
+                    message.UserName = User.Identity.Name;
+                    //var sender = await _userManager.GetUserAsync(User);
+                    var sender = await _userManager.GetUserAsync(HttpContext.User);
+                    message.UserId = sender.Id;
+                    await _context.AddAsync(message);
+                    await _context.SaveChangesAsync();
+                    return Ok();
+               // }
+                return Error();
             }
-            return Error();    // 15 min video compelete.
-        }
+            catch (Exception ex)
+            {
 
+                throw new Exception(ex.Message);
+            }
+
+        }
+        private Task<AppUser> GetCurrentUserAsync() => _userManager.GetUserAsync(HttpContext.User);
         public IActionResult Privacy()
         {
             return View();

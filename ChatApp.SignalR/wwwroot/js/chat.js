@@ -7,7 +7,7 @@
 }
 
 // userName is declared in razor page.
-const username = userName ?? "raselkobir57@gmail.com", userName;
+const username = userName;
 const textInput = document.getElementById('messageText');
 const whenInput = document.getElementById('when');
 const chat = document.getElementById('chat');
